@@ -1,0 +1,33 @@
+# Environment Variables
+
+.env
+
+bot_settings.json
+
+
+
+# Python Virtual Environments
+
+venv/
+
+env/
+
+.venv/
+
+ENV/
+
+
+
+# Python Cache & Compiled Files
+
+__pycache__/
+
+*.py[cod]
+
+*$py.class
+
+
+
+# Logs
+
+*.log
