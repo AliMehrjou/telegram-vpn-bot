@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: vpn_bot_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  bot:
+    build: .
+    container_name: vpn_bot_app
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env
+    command: >
+      sh -c "sleep 10 && python main.py"
+
+volumes:
+  db_data:
