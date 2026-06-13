@@ -1,8 +1,3 @@
-این هم کل متن فایل `README.md` به صورت یک‌پارچه و آماده. این بار برای بخش‌های کد به جای استفاده از بک‌تیک از ساختار کدهای HTML (`<pre><code>`) استفاده کردم که **تحت هیچ شرایطی** موقع کپی کردن به هم نریزد و در گیت‌هاب هم با بالاترین کیفیت و استاندارد نمایش داده شود.
-
-کل کادر زیر را کپی کنید و داخل فایل `README.md` خود قرار دهید:
-
-```markdown
 # 🤖 Telegram VPN Bot (Without need API panel)
 
 A production-ready, fully asynchronous Telegram bot for distributing, selling, and managing VPN configurations. Built with **Python**, **aiogram 3**, and **MySQL**, it supports free config distribution, manual payment verification, a referral/reward system, an automatic stock pipeline, and a comprehensive admin panel — all within Telegram.
