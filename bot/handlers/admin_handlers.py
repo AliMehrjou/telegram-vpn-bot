@@ -401,6 +401,10 @@ async def help_admin_cmd(message: Message):
         "🔹 <b>مشاهده لیست پلن‌ها (جهت دریافت آیدی)</b>\n"
         "فرمت: \n<code>/plans_list</code>\n"
         "توضیح: آیدی پلن‌ها برای شارژ انبار کانفیگ استفاده می‌شود.\n\n"
+
+        "🔹 <b>ویرایش پلن اشتراکی</b> 🆕\n"
+        "فرمت: \n<code>/edit_plan [آیدی_پلن] Price:[قیمت]|GB:[حجم]</code>\n"
+        "توضیح: می‌توانید یک یا چند ویژگی پلن (Name, Price, Days, GB) را تغییر دهید.\n\n"
         
         "🔹 <b>شارژ انبار (اضافه کردن کانفیگ به پلن خاص)</b>\n"
         "فرمت: \n<code>/add_vip [آیدی_پلن] [متن_کانفیگ]</code>\n"
@@ -750,5 +754,86 @@ async def send_message_cmd(message: Message, bot):
             f"❌ خطا در ارسال پیام!\n"
             f"ممکن است کاربر ربات را استارت نکرده باشد، ربات را بلاک کرده باشد، یا آیدی اشتباه باشد.\n\n"
             f"جزئیات خطا: `{e}`",
+            parse_mode="Markdown"
+        )
+
+@router.message(Command("edit_plan"))
+async def edit_plan_cmd(message: Message):
+    parts = message.text.split(maxsplit=2)
+    
+    # بررسی فرمت ارسال دستور
+    if len(parts) < 3:
+        return await message.answer(
+            "❌ فرمت نامعتبر است.\n\n"
+            "✅ استفاده صحیح:\n`/edit_plan [آیدی_پلن] Name:[نام]|Price:[قیمت]|Days:[روز]|GB:[حجم]`\n\n"
+            "💡 **نکته:** نیاز نیست همه فیلدها را وارد کنید. فقط بخش‌هایی که می‌خواهید تغییر کنند را بنویسید.\n\n"
+            "**مثال‌ها:**\n"
+            "تغییر فقط قیمت: `/edit_plan 1 Price:60000`\n"
+            "تغییر حجم و نام: `/edit_plan 2 Name:Plan_V2|GB:100`", 
+            parse_mode="Markdown"
+        )
+
+    plan_id_str = parts[1].strip()
+    
+    if not plan_id_str.isdigit():
+        return await message.answer("❌ آیدی پلن باید یک عدد باشد.")
+
+    plan_id = int(plan_id_str)
+    raw_data = parts[2].strip()
+
+    try:
+        # پردازش اطلاعات ورودی
+        pairs = raw_data.split("|")
+        data_dict = {}
+        for pair in pairs:
+            if ":" not in pair:
+                continue
+            k, v = pair.split(":", 1)
+            data_dict[k.strip()] = v.strip()
+
+        async with async_session() as session:
+            # جستجوی پلن در دیتابیس
+            plan = await session.scalar(select(Plan).where(Plan.id == plan_id))
+            
+            if not plan:
+                return await message.answer(f"❌ پلنی با آیدی `{plan_id}` در سیستم یافت نشد!\nجهت مشاهده آیدی‌ها از /plans_list استفاده کنید.", parse_mode="Markdown")
+
+            # آپدیت فیلدها در صورت وجود در دستور
+            updated_fields = []
+            
+            if "Name" in data_dict:
+                plan.name = data_dict["Name"]
+                updated_fields.append("نام")
+                
+            if "Price" in data_dict:
+                plan.price = float(data_dict["Price"])
+                updated_fields.append("قیمت")
+                
+            if "Days" in data_dict:
+                plan.duration_days = int(data_dict["Days"])
+                updated_fields.append("تعداد روز")
+                
+            if "GB" in data_dict:
+                gb_val = data_dict["GB"]
+                # رعایت منطق وارد کردن رشته "نامحدود" مطابق با بخش افزودن پلن شما
+                plan.volume_gb = float(gb_val) if gb_val not in "نامحدود" else gb_val
+                updated_fields.append("حجم")
+
+            if not updated_fields:
+                return await message.answer("⚠️ هیچ فیلد معتبری برای ویرایش وارد نکردید.")
+
+            # ذخیره تغییرات در دیتابیس
+            await session.commit()
+
+        await message.answer(
+            f"✅ پلن اشتراکی شماره **{plan_id}** با موفقیت بروزرسانی شد.\n"
+            f"🔄 فیلدهای تغییر یافته: {', '.join(updated_fields)}", 
+            parse_mode="Markdown"
+        )
+        
+    except Exception as e:
+        await message.answer(
+            f"❌ خطا در پردازش اطلاعات:\n`{e}`\n\n"
+            f"اطمینان حاصل کنید جداکننده‌ها (مانند `:` و `|`) به درستی قرار دارند.", 
             parse_mode="Markdown"
         )
